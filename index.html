@@ -11,12 +11,33 @@
 </style>
 </head>
 <body>
-<iframe id="app" title="機台作業選單" allow="camera; clipboard-write"></iframe>
 <script>
   // 軍陶 機台作業網頁版（Apps Script 部署網址）
   var APP = 'https://script.google.com/macros/s/AKfycbyt-6IepElV0Nvgj9xV9_83-ZHpeQiX8RGgw2HTIM6zDJ3U-Ui1si5FLsrdqyl9LR05dQ/exec';
-  // 把 ?m=CNC-01 這類參數原樣帶過去
-  document.getElementById('app').src = APP + (location.search || '');
+  var KEY = 'jt_token';
+
+  function getToken() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function setToken(t) { try { t ? localStorage.setItem(KEY, t) : localStorage.removeItem(KEY); } catch (e) {} }
+
+  // 機台網頁登入／登出時，把登入憑證交給這一頁保存（30 天內不用重複登入）
+  window.addEventListener('message', function (e) {
+    if (!/\.googleusercontent\.com$/.test(new URL(e.origin).hostname)) return;
+    if (e.data && 'jtToken' in e.data) setToken(e.data.jtToken);
+  });
+
+  // 帶入 ?m=CNC-01 等參數與登入憑證
+  var params = new URLSearchParams(location.search);
+  var tk = getToken();
+  if (tk) params.set('t', tk);
+  var qs = params.toString();
+
+  // credentialless：不帶 Google 登入狀態開啟，避免多帳號時打不開
+  var f = document.createElement('iframe');
+  f.setAttribute('credentialless', '');
+  f.title = '機台作業選單';
+  f.allow = 'camera; clipboard-write';
+  f.src = APP + (qs ? '?' + qs : '');
+  document.body.appendChild(f);
 </script>
 </body>
 </html>
